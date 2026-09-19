@@ -34,6 +34,11 @@ export default function Buscar() {
   // Paginação
   const [pagina, setPagina] = useState(1);
 
+  const cidadesDoEstado = useMemo(
+    () => cidades.filter((item) => item.uf === uf),
+    [cidades, uf],
+  );
+
   useEffect(() => {
     const controle = new AbortController();
     fetch("/api/cidades", { signal: controle.signal })
@@ -262,13 +267,10 @@ export default function Buscar() {
             <select
               id="cidade"
               value={cidade}
-              onChange={(e) => {
-                setCidade(e.target.value);
-                if (e.target.value) setUf(e.target.value.slice(0, 2));
-              }}
+              onChange={(e) => setCidade(e.target.value)}
             >
-              <option value="">{erroCidades ? "Não foi possível carregar cidades" : cidades.length ? "Todas as cidades" : "Carregando cidades…"}</option>
-              {cidades.map((item) => (
+              <option value="">{erroCidades ? "Não foi possível carregar cidades" : cidades.length ? "Todas as cidades do estado" : "Carregando cidades…"}</option>
+              {cidadesDoEstado.map((item) => (
                 <option key={`${item.nome}-${item.uf}`} value={`${item.uf}:${item.nome}`}>
                   {item.nome} — {item.uf}
                 </option>
