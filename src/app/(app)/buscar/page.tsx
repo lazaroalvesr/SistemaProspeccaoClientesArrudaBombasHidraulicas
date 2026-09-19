@@ -18,6 +18,7 @@ export default function Buscar() {
   const [uf, setUf] = useState("SP");
   const [cidade, setCidade] = useState("");
   const [cidades, setCidades] = useState<Cidade[]>([]);
+  const [carregandoCidades, setCarregandoCidades] = useState(true);
   const [erroCidades, setErroCidades] = useState(false);
   const [segmento, setSegmento] = useState<Segment>("concreteira");
   const [portes, setPortes] = useState<Porte[]>(["medio", "grande"]);
@@ -49,6 +50,9 @@ export default function Buscar() {
       .then((dados) => setCidades(dados.cidades))
       .catch((erro) => {
         if (erro?.name !== "AbortError") setErroCidades(true);
+      })
+      .finally(() => {
+        if (!controle.signal.aborted) setCarregandoCidades(false);
       });
     return () => controle.abort();
   }, []);
@@ -269,7 +273,7 @@ export default function Buscar() {
               value={cidade}
               onChange={(e) => setCidade(e.target.value)}
             >
-              <option value="">{erroCidades ? "Não foi possível carregar cidades" : cidades.length ? "Todas as cidades do estado" : "Carregando cidades…"}</option>
+              <option value="">{erroCidades ? "Não foi possível carregar cidades" : carregandoCidades ? "Carregando cidades…" : cidadesDoEstado.length ? "Todas as cidades do estado" : "Nenhuma cidade disponível"}</option>
               {cidadesDoEstado.map((item) => (
                 <option key={`${item.nome}-${item.uf}`} value={`${item.uf}:${item.nome}`}>
                   {item.nome} — {item.uf}
