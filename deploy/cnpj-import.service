@@ -1,0 +1,17 @@
+[Unit]
+Description=Importação mensal da base de CNPJ da Receita Federal (Arruda)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/var/www/arruda
+User=www-data
+# --mes é calculado dinamicamente para "sempre o mês anterior ao atual",
+# porque a Receita costuma publicar o snapshot de um mês só perto do fim
+# dele. Ajuste para %%Y-%%m se preferir tentar o mês corrente primeiro.
+ExecStart=/bin/bash -c '/usr/bin/npx tsx scripts/importar-cnpj.ts --mes=$(date -d "-1 month" +\%%Y-\%%m)'
+# Se a importação estourar 6 horas, algo está errado — aborta em vez de travar o próximo ciclo.
+TimeoutStartSec=6h
+StandardOutput=append:/var/log/arruda/cnpj-import.log
+StandardError=append:/var/log/arruda/cnpj-import.log

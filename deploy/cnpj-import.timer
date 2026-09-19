@@ -1,0 +1,11 @@
+[Unit]
+Description=Roda a importação de CNPJ todo dia 5 do mês, de madrugada
+
+[Timer]
+# Dia 5, 3h da manhã — dá tempo da Receita ter publicado o snapshot do mês anterior.
+OnCalendar=*-*-05 03:00:00
+Persistent=true
+RandomizedDelaySec=1800
+
+[Install]
+WantedBy=timers.target
