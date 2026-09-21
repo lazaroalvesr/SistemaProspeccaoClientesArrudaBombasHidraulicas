@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
+import { usuarioAtual } from "@/lib/sessao";
 
 type Status = "novo" | "contatado" | "negociando" | "cliente" | "descartado";
 
@@ -22,19 +23,25 @@ type LeadRecente = {
   criado_em: string;
 };
 
-export default function Dashboard() {
+export default async function Dashboard() {
+  const usuario = await usuarioAtual();
+  if (!usuario) return null;
+  const somenteDoUsuario = usuario.role !== "admin";
+  const ondeUsuario = somenteDoUsuario ? " WHERE usuario_id = ?" : "";
+  const parametros = somenteDoUsuario ? [usuario.id] : [];
+
   const totais = db.prepare(
-    "SELECT status, COUNT(*) AS total FROM leads GROUP BY status",
-  ).all() as LinhaStatus[];
+    `SELECT status, COUNT(*) AS total FROM leads${ondeUsuario} GROUP BY status`,
+  ).all(...parametros) as LinhaStatus[];
   const porStatus = Object.fromEntries(totais.map((item) => [item.status, item.total])) as Record<Status, number>;
   const total = totais.reduce((soma, item) => soma + item.total, 0);
   const emAberto = (porStatus.novo ?? 0) + (porStatus.contatado ?? 0) + (porStatus.negociando ?? 0);
   const altaPrioridade = (db.prepare(
-    "SELECT COUNT(*) AS total FROM leads WHERE prioridade = 'A' AND status NOT IN ('cliente', 'descartado')",
-  ).get() as { total: number }).total;
+    `SELECT COUNT(*) AS total FROM leads WHERE prioridade = 'A' AND status NOT IN ('cliente', 'descartado')${somenteDoUsuario ? " AND usuario_id = ?" : ""}`,
+  ).get(...parametros) as { total: number }).total;
   const recentes = db.prepare(
-    "SELECT id, nome, cidade, uf, prioridade, pontuacao, status, criado_em FROM leads ORDER BY criado_em DESC, id DESC LIMIT 6",
-  ).all() as LeadRecente[];
+    `SELECT id, nome, cidade, uf, prioridade, pontuacao, status, criado_em FROM leads${ondeUsuario} ORDER BY criado_em DESC, id DESC LIMIT 6`,
+  ).all(...parametros) as LeadRecente[];
   const maiorEtapa = Math.max(...ETAPAS.map((etapa) => porStatus[etapa.status] ?? 0), 1);
 
   return (
@@ -42,7 +49,7 @@ export default function Dashboard() {
       <div className="dashboard-topo">
         <div>
           <h1>Visão geral</h1>
-          <p>Acompanhe a prospecção da equipe e encontre o próximo contato.</p>
+          <p>{somenteDoUsuario ? "Acompanhe sua prospecção e encontre o próximo contato." : "Acompanhe a prospecção da equipe e encontre o próximo contato."}</p>
         </div>
         <Link className="link-botao btn-destaque" href="/buscar">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
@@ -54,7 +61,7 @@ export default function Dashboard() {
         <div className="resumo-item">
           <span>Leads cadastrados</span>
           <strong className="numero">{total}</strong>
-          <small>Empresas na carteira da equipe</small>
+          <small>{somenteDoUsuario ? "Empresas na sua carteira" : "Empresas na carteira da equipe"}</small>
         </div>
         <div className="resumo-item">
           <span>Em andamento</span>
@@ -123,7 +130,7 @@ export default function Dashboard() {
         <div className="painel-cabecalho">
           <div>
             <h2>Adicionados recentemente</h2>
-            <p>Últimas empresas salvas pela equipe.</p>
+            <p>{somenteDoUsuario ? "Últimas empresas salvas por você." : "Últimas empresas salvas pela equipe."}</p>
           </div>
           <Link href="/leads">Abrir carteira <span aria-hidden="true">→</span></Link>
         </div>

@@ -9,6 +9,7 @@ export default function Leads() {
   const [leads, setLeads] = useState<Lead[] | null>(null);
   const [filtro, setFiltro] = useState<string>("todos");
   const [somenteMeus, setSomenteMeus] = useState(false);
+  const [podeVerTodos, setPodeVerTodos] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
   const carregar = useCallback(async () => {
@@ -24,6 +25,7 @@ export default function Leads() {
     }
     setErro(null);
     setLeads(dados.leads);
+    setPodeVerTodos(!!dados.podeVerTodos);
   }, [filtro, somenteMeus]);
 
   useEffect(() => {
@@ -74,8 +76,9 @@ export default function Leads() {
       <div className="cabecalho-pagina">
         <h1>Meus leads</h1>
         <p>
-          Empresas salvas pela equipe. Todo mundo vê a mesma lista, então
-          ninguém aborda a mesma empresa duas vezes.
+          {podeVerTodos
+            ? "Acompanhe as empresas salvas pela equipe e seus responsáveis."
+            : "Acompanhe somente as empresas que você salvou para prospectar."}
         </p>
       </div>
 
@@ -95,14 +98,16 @@ export default function Leads() {
             {s.rotulo}
           </button>
         ))}
-        <label className="marcador" style={{ marginLeft: "auto" }}>
-          <input
-            type="checkbox"
-            checked={somenteMeus}
-            onChange={(e) => setSomenteMeus(e.target.checked)}
-          />
-          Só os que eu salvei
-        </label>
+        {podeVerTodos && (
+          <label className="marcador" style={{ marginLeft: "auto" }}>
+            <input
+              type="checkbox"
+              checked={somenteMeus}
+              onChange={(e) => setSomenteMeus(e.target.checked)}
+            />
+            Só os que eu salvei
+          </label>
+        )}
       </div>
 
       {erro && <div className="aviso">{erro}</div>}
@@ -160,7 +165,7 @@ export default function Leads() {
                       Site
                     </a>
                   )}
-                  <span>salvo por {lead.ownerName}</span>
+                  {podeVerTodos && <span>salvo por {lead.ownerName}</span>}
                 </div>
               </div>
 

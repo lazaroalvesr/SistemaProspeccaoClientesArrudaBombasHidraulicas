@@ -23,7 +23,9 @@ export async function GET(req: Request) {
     condicoes.push("l.prioridade = ?");
     valores.push(prioridade);
   }
-  if (meus) {
+  // Vendedores sempre enxergam apenas a própria carteira. O filtro é opcional
+  // somente para administradores, que podem acompanhar toda a equipe.
+  if (usuario.role !== "admin" || meus) {
     condicoes.push("l.usuario_id = ?");
     valores.push(usuario.id);
   }
@@ -34,7 +36,10 @@ export async function GET(req: Request) {
     " ORDER BY l.pontuacao DESC, l.criado_em DESC";
 
   const linhas = db.prepare(sql).all(...valores) as LinhaLead[];
-  return NextResponse.json({ leads: linhas.map(paraLead) });
+  return NextResponse.json({
+    leads: linhas.map(paraLead),
+    podeVerTodos: usuario.role === "admin",
+  });
 }
 
 export async function POST(req: Request) {

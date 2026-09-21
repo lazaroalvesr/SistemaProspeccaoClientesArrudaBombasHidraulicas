@@ -16,6 +16,12 @@ export async function PATCH(req: Request, { params }: Contexto) {
     | { usuario_id: number }
     | undefined;
   if (!lead) return NextResponse.json({ erro: "Lead não encontrado." }, { status: 404 });
+  if (lead.usuario_id !== usuario.id && usuario.role !== "admin") {
+    return NextResponse.json(
+      { erro: "Esse lead pertence a outro vendedor." },
+      { status: 403 },
+    );
+  }
 
   if (corpo.status) {
     if (!STATUS.some((s) => s.valor === corpo.status)) {

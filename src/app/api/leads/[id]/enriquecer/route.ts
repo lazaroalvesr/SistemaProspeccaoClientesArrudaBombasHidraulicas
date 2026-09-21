@@ -20,6 +20,9 @@ export async function POST(req: Request, { params }: Contexto) {
     | LinhaLead
     | undefined;
   if (!atual) return NextResponse.json({ erro: "Lead não encontrado." }, { status: 404 });
+  if (atual.usuario_id !== usuario.id && usuario.role !== "admin") {
+    return NextResponse.json({ erro: "Esse lead pertence a outro vendedor." }, { status: 403 });
+  }
 
   const digitos = cnpj.replace(/\D/g, "");
   if (digitos.length !== 14) {
